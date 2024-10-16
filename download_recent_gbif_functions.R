@@ -67,12 +67,13 @@ geo_filter <- function(gbif_data, kml) {
   kml_p <- st_collection_extract(kml_p, "POLYGON")
   
   gbif_data <- dplyr::filter(gbif_data, !is.na(decimalLatitude))
+  
   df_sf <- st_as_sf(
     gbif_data,
     coords = c("decimalLongitude", "decimalLatitude"),
     crs = st_crs(kml_p)
   )
-  gbif_data$inside_kml <- st_within(df_sf, kml_p, sparse = FALSE)
+  gbif_data$inside_kml <- st_within(df_sf, kml_p, sparse = FALSE) #not working!!!!!!!
   gbif_data_inside <- dplyr::filter(gbif_data, inside_kml)
   gbif_data_inside_ss<-dplyr::filter(gbif_data,coordinateUncertaintyInMeters<5000)
   return(gbif_data_inside_ss)
