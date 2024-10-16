@@ -58,7 +58,14 @@ download_observations_bbox <- function(kml_file_path, start_year) {
 
 # Function to filter data within KML-defined boundaries
 geo_filter <- function(gbif_data, kml) {
-  kml_p <- st_polygonize(st_cast(kml, "MULTILINESTRING"))
+  
+  kml_multilines <- st_cast(kml, "MULTILINESTRING")
+  if (!st_is_valid(kml_multilines)) {
+    kml_multilines <- st_make_valid(kml_multilines)  # Attempt to fix invalid geometry
+  }
+  kml_p <- st_polygonize(kml_multilines)
+  kml_p <- st_collection_extract(kml_p, "POLYGON")
+  
   gbif_data <- dplyr::filter(gbif_data, !is.na(decimalLatitude))
   df_sf <- st_as_sf(
     gbif_data,
@@ -66,7 +73,7 @@ geo_filter <- function(gbif_data, kml) {
     crs = st_crs(kml_p)
   )
   gbif_data$inside_kml <- st_within(df_sf, kml_p, sparse = FALSE)
-  gbif_data_inside <- filter(gbif_data, inside_kml)
+  gbif_data_inside <- dplyr::filter(gbif_data, inside_kml)
   gbif_data_inside_ss<-dplyr::filter(gbif_data,coordinateUncertaintyInMeters<5000)
   return(gbif_data_inside_ss)
 }
