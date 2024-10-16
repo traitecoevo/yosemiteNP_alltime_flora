@@ -24,7 +24,7 @@ source("download_recent_gbif_functions.R")
 1.  Download the 2024 or later data from ALA
 
 ``` r
-yos_kml <- st_read("Yosemite.kml")
+yos_kml <- st_read("Yosemite.kml",)
 ```
 
     ## Reading layer `WildernessBoundary' from data source 
@@ -48,6 +48,11 @@ yos_only_obs <- geo_filter(yos_obs, yos_kml)
     ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
     ## generated.
 
+``` r
+yos_only_obs_minus<-dplyr::filter(yos_only_obs,coordinateUncertaintyInMeters<5000)%>%
+  dplyr::filter(phylum=="Tracheophyta")
+```
+
 2.  trying to wrangle taxonomy to APC for both lists, using the APCalign
     package
 
@@ -67,10 +72,10 @@ yos_only_obs <- geo_filter(yos_obs, yos_kml)
 
 ``` r
 #gbif gives taxonomic names per obs, so checking both currently to see if either is on the all time list; this is a bit hacky but empirically seems to work better than using TNRS 
-new_discoveries1 <- setdiff(unique(yos_only_obs$species), 
+new_discoveries1 <- setdiff(unique(yos_only_obs_minus$species), 
                            unique(alltime_org$accepted_name))
 
-new_discoveries2 <- setdiff(word(unique(yos_only_obs$scientificName),1,2), 
+new_discoveries2 <- setdiff(word(unique(yos_only_obs_minus$scientificName),1,2), 
                            unique(alltime_org$accepted_name))
 
 new_discoveries<-intersect(new_discoveries1,new_discoveries2)
@@ -92,42 +97,21 @@ yos_only_obs %>%
 
     ## Joining with `by = join_by(species)`
 
-    ## # A tibble: 33 × 2
-    ##    species                    number_of_recent_obs
-    ##    <chr>                                     <int>
-    ##  1 Agropyron cristatum                           1
-    ##  2 Argemone munita                               2
-    ##  3 Asclepias eriocarpa                           1
-    ##  4 Asterella palmeri                             1
-    ##  5 Astragalus andersonii                         1
-    ##  6 Calochortus albus                             2
-    ##  7 Castilleja linariifolia                       7
-    ##  8 Cercocarpus ledifolius                        2
-    ##  9 Dendroalsia abietina                          1
-    ## 10 Dendromecon rigida                            1
-    ## 11 Diplacus bicolor                              1
-    ## 12 Eriocoma hymenoides                           1
-    ## 13 Eriogonum elatum                              1
-    ## 14 Funaria hygrometrica                          1
-    ## 15 Greeneocharis circumscissa                    1
-    ## 16 Heteromeles arbutifolia                       1
-    ## 17 Ipomopsis tenuituba                           1
-    ## 18 Jasminum nudiflorum                           1
-    ## 19 Leymus cinereus                               1
-    ## 20 Lupinus polyphyllus                           1
-    ## 21 Marchantia polymorpha                         1
-    ## 22 Marchantia quadrata                           1
-    ## 23 Phlox subulata                                1
-    ## 24 Pleiacanthus spinosus                         1
-    ## 25 Potentilla biennis                            1
-    ## 26 Pteridium aquilinum                          41
-    ## 27 Purshia tridentata                            3
-    ## 28 Salvia greggii                                1
-    ## 29 Sidalcea oregana                              2
-    ## 30 Symphyotrichum chilense                       1
-    ## 31 Taraxia subacaulis                            2
-    ## 32 Trifolium andersonii                          2
-    ## 33 Viola praemorsa                               1
+    ## Simple feature collection with 7 features and 2 fields
+    ## Geometry type: GEOMETRY
+    ## Dimension:     XY
+    ## Bounding box:  xmin: -119.8604 ymin: 37.50503 xmax: -119.3741 ymax: 38.04865
+    ## Geodetic CRS:  WGS 84
+    ## # A tibble: 7 × 3
+    ##   species                 number_of_recent_obs                          geometry
+    ## * <chr>                                  <int>                    <GEOMETRY [°]>
+    ## 1 Asclepias eriocarpa                        1        POINT (-119.6407 37.54668)
+    ## 2 Jasminum nudiflorum                        1        POINT (-119.5883 37.75171)
+    ## 3 Lupinus polyphyllus                        1        POINT (-119.6467 37.53971)
+    ## 4 Phlox subulata                             1        POINT (-119.7511 37.69822)
+    ## 5 Pteridium aquilinum                       44 MULTIPOINT ((-119.3741 37.87156)…
+    ## 6 Salvia greggii                             1         POINT (-119.587 37.74829)
+    ## 7 Symphyotrichum chilense                    1        POINT (-119.6275 37.56025)
 
 The Yosemite NP plant species list currently contains 1633 species and
 this analysis suggests XX candidates for addition found in 2024.

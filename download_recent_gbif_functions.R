@@ -56,25 +56,22 @@ download_observations_bbox <- function(kml_file_path, start_year) {
   return(download)
 }
 
-# Function to filter data within KML-defined boundaries
-geo_filter <- function(gbif_data, kml) {
-  
-  kml_multilines <- st_cast(kml, "MULTILINESTRING")
-  if (!st_is_valid(kml_multilines)) {
-    kml_multilines <- st_make_valid(kml_multilines)  # Attempt to fix invalid geometry
-  }
-  kml_p <- st_polygonize(kml_multilines)
-  kml_p <- st_collection_extract(kml_p, "POLYGON")
-  
-  gbif_data <- dplyr::filter(gbif_data, !is.na(decimalLatitude))
-  
-  df_sf <- st_as_sf(
-    gbif_data,
-    coords = c("decimalLongitude", "decimalLatitude"),
-    crs = st_crs(kml_p)
-  )
-  gbif_data$inside_kml <- st_within(df_sf, kml_p, sparse = FALSE) #not working!!!!!!!
-  gbif_data_inside <- dplyr::filter(gbif_data, inside_kml)
-  gbif_data_inside_ss<-dplyr::filter(gbif_data,coordinateUncertaintyInMeters<5000)
-  return(gbif_data_inside_ss)
+
+geo_filter<-function(yos_obs,yos_kml){
+  yos_obs_sf <- st_as_sf(yos_obs,
+                         coords = c("decimalLongitude", "decimalLatitude"),
+                         crs = 4326) # WGS 84 CRS, commonly used for geographic coordinates
+yos_multilines <- st_cast(yos_kml, "MULTILINESTRING")
+yos_poly <- st_polygonize(yos_multilines)
+within_polygon <- st_within(yos_obs_sf, yos_poly, sparse = FALSE)
+sum(within_polygon)
+yos_obs_sf$within_polygon<-within_polygon
+out<-dplyr::filter(yos_obs_sf,within_polygon)
+
+# library(ggplot2)
+# ggplot() +
+# geom_sf(data = yos_poly, fill = NA, color = "blue") +
+# geom_sf(data = yos_obs_sf, aes(color = within_polygon), size = 1) +
+# labs(color = "Within Polygon")
+return(out)
 }

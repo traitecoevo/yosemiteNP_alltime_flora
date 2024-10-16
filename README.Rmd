@@ -23,10 +23,13 @@ source("download_recent_gbif_functions.R")
 
 1. Download the 2024 or later data from ALA
 ```{r}
-yos_kml <- st_read("Yosemite.kml")
+yos_kml <- st_read("Yosemite.kml",)
 yos_obs <- download_observations_bbox(
   "Yosemite.kml", start_year = 2024)
 yos_only_obs <- geo_filter(yos_obs, yos_kml)
+yos_only_obs_minus<-dplyr::filter(yos_only_obs,coordinateUncertaintyInMeters<5000)%>%
+  dplyr::filter(phylum=="Tracheophyta")
+
 ```
 
 
@@ -46,10 +49,10 @@ yos_only_obs <- geo_filter(yos_obs, yos_kml)
 ```{r}
 
 #gbif gives taxonomic names per obs, so checking both currently to see if either is on the all time list; this is a bit hacky but empirically seems to work better than using TNRS 
-new_discoveries1 <- setdiff(unique(yos_only_obs$species), 
+new_discoveries1 <- setdiff(unique(yos_only_obs_minus$species), 
                            unique(alltime_org$accepted_name))
 
-new_discoveries2 <- setdiff(word(unique(yos_only_obs$scientificName),1,2), 
+new_discoveries2 <- setdiff(word(unique(yos_only_obs_minus$scientificName),1,2), 
                            unique(alltime_org$accepted_name))
 
 new_discoveries<-intersect(new_discoveries1,new_discoveries2)
