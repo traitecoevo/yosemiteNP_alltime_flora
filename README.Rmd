@@ -1,0 +1,72 @@
+---
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# A dynamic lookup to help curate the "all time" plant species list for Royal National Park, NSW, Australia
+
+Versioned data for the "all time" flora of Royal National Park, NSW, Australia. The R script checks the ALA for species that are candidates for new discoveries since the list was created and prints out the list of those candidates for new discoveries.  These new discoveries may arise from new collections at herbaria or from citizen scientists.
+
+Note that some of these "new" species arise from the different rates of taxonomic updates in the different data resources.  These need manual curation before adding new species to the all-time list.  
+
+
+### First load some libraries and helper functions:
+
+```{r}
+source("download_recent_gbif_functions.R")
+```
+
+### Then there are a few steps to the process:
+
+1. Download the 2024 or later data from ALA
+```{r}
+yos_kml <- st_read("Yosemite.kml")
+yos_obs <- download_observations_bbox(
+  "Yosemite.kml", start_year = 2024)
+yos_only_obs <- geo_filter(yos_obs, yos_kml)
+```
+
+
+2. trying to wrangle taxonomy to APC for both lists, using the APCalign package
+```{r}
+# resources <- APCalign::load_taxonomic_resources(quiet = TRUE)
+# accepted_new_names <- APCalign::create_taxonomic_update_lookup(
+#   unique(royal_only_obs$species, resources = resources, quiet = TRUE))
+ alltime_org <- read.csv("Yosemite_masterlist_2024_06_15.csv")
+# alltime <- APCalign::create_taxonomic_update_lookup(
+#   unique(alltime_org$accepted_name), resources = resources, quiet = TRUE)
+# putative_new_species <- stringr::word(
+#   unique(accepted_new_names$accepted_name), 1, 2)
+```
+
+3. figure out new names that appeared in 2024 (or later) that are not in the all time list
+```{r}
+
+#gbif gives taxonomic names per obs, so checking both currently to see if either is on the all time list; this is a bit hacky but empirically seems to work better than using TNRS 
+new_discoveries1 <- setdiff(unique(yos_only_obs$species), 
+                           unique(alltime_org$accepted_name))
+
+new_discoveries2 <- setdiff(word(unique(yos_only_obs$scientificName),1,2), 
+                           unique(alltime_org$accepted_name))
+
+new_discoveries<-intersect(new_discoveries1,new_discoveries2)
+```
+
+
+4. calculate number of 2024 or later observations for the set of potentially new species, to help evaluate the candidate list.
+```{r}
+new_discoveries<-data.frame(species=new_discoveries)
+
+yos_only_obs %>% 
+  group_by(species) %>% 
+  summarize(number_of_recent_obs = n()) %>% 
+  right_join(new_discoveries) %>% 
+  filter(!is.na(species)) %>%
+  print(n = Inf)
+```
+
+The Yosemite NP plant species list currently contains 1633 species and this analysis suggests XX candidates for addition found in 2024.  
+ 
