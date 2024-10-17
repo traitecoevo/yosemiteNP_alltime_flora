@@ -5,7 +5,9 @@ suppressPackageStartupMessages(library(APCalign))
 suppressPackageStartupMessages(library(tidyverse, warn.conflicts = FALSE))
 
 # Define the function for querying GBIF data with geographic and temporal filters
-query_gbif <- function(taxon="Plantae", datayear=2024, wkt_bbox = NULL) {
+query_gbif <- function(taxon = "Plantae",
+                       datayear = 2024,
+                       wkt_bbox = NULL) {
   # Set up the taxon key for the specified taxon group
   taxon_key <- name_backbone(name = taxon)$usageKey
   
@@ -47,7 +49,7 @@ download_observations_bbox <- function(kml_file_path, start_year) {
   )
   
   # Query GBIF data within the specified spatial and temporal constraints
-  download <- query_gbif(datayear = start_year, wkt_bbox=wkt_bbox)
+  download <- query_gbif(datayear = start_year, wkt_bbox = wkt_bbox)
   
   # Remove records with high coordinate uncertainty
   #download <- download %>%
@@ -57,21 +59,23 @@ download_observations_bbox <- function(kml_file_path, start_year) {
 }
 
 
-geo_filter<-function(yos_obs,yos_kml){
-  yos_obs_sf <- st_as_sf(yos_obs,
-                         coords = c("decimalLongitude", "decimalLatitude"),
-                         crs = 4326) # WGS 84 CRS, commonly used for geographic coordinates
-yos_multilines <- st_cast(yos_kml, "MULTILINESTRING")
-yos_poly <- st_polygonize(yos_multilines)
-within_polygon <- st_within(yos_obs_sf, yos_poly, sparse = FALSE)
-sum(within_polygon)
-yos_obs_sf$within_polygon<-within_polygon
-out<-dplyr::filter(yos_obs_sf,within_polygon)
-
-# library(ggplot2)
-# ggplot() +
-# geom_sf(data = yos_poly, fill = NA, color = "blue") +
-# geom_sf(data = yos_obs_sf, aes(color = within_polygon), size = 1) +
-# labs(color = "Within Polygon")
-return(out)
+geo_filter <- function(yos_obs, yos_kml) {
+  yos_obs_sf <- st_as_sf(
+    yos_obs,
+    coords = c("decimalLongitude", "decimalLatitude"),
+    crs = 4326
+  ) # WGS 84 CRS, commonly used for geographic coordinates
+  yos_multilines <- st_cast(yos_kml, "MULTILINESTRING")
+  yos_poly <- st_polygonize(yos_multilines)
+  within_polygon <- st_within(yos_obs_sf, yos_poly, sparse = FALSE)
+  sum(within_polygon)
+  yos_obs_sf$within_polygon <- within_polygon
+  out <- dplyr::filter(yos_obs_sf, within_polygon)
+  
+  # library(ggplot2)
+  # ggplot() +
+  # geom_sf(data = yos_poly, fill = NA, color = "blue") +
+  # geom_sf(data = yos_obs_sf, aes(color = within_polygon), size = 1) +
+  # labs(color = "Within Polygon")
+  return(out)
 }
